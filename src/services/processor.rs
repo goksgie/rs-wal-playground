@@ -2,10 +2,13 @@
 
 use std::ffi;
 use std::collections::HashMap;
+use std::iter::Filter;
 use std::marker::PhantomData;
-use std::thread;
+use std::thread::{self, JoinHandle};
 
+use crate::simulation::lib::SimulationConfig;
 use crate::utilities;
+use crate::wal::{WalAction, WalFile};
 
 /// This metadata is maintained by the main proccessor, and not thread safe.
 struct Metadata {
@@ -38,5 +41,45 @@ impl Metadata {
     }
 }
 
-pub fn service_startup(run_interval_sec: usize) {
+pub fn wal_processor_internal(sim_config: SimulationConfig) {
+    let mut iteration_count = 0;
+    let mut processed_wals = std::collections::HashSet::new();
+    loop {
+        let ready_files = utilities::get_ready_files()
+            .expect("The API to list ready files did not terminate correctly")
+            .into_iter()
+            .filter(|w| { !processed_wals.contains(w) })
+            .collect::<Vec<ffi::OsString>>();
+        if ready_files.len() == 0 {
+            println!("Cleared the WAL files with num iterations: [{}]", iteration_count);
+            break;
+        }
+
+        for ready_file in ready_files {
+            let mut w = WalFile::read(ready_file);
+            thread::sleep(std::time::Duration::from_nanos(w.duration));
+            match w.action {
+                WalAction::Success => {
+                    processed_wals.insert(w.file_name.clone());
+                    w.mark_done().expect("Failed to mark the file as done.");
+                },
+                WalAction::Fail { count } => {
+                    w.decrement_failure_count().expect("Failed to decrement the failure count");
+                    w.flush_to_file().expect("failed to flush after decrementing the failure count");
+                }
+            }
+        }
+
+        iteration_count += 1;
+        thread::sleep(std::time::Duration::from_nanos(sim_config.wal_processing_delay));
+    }
+}
+
+pub fn service_startup(sim_config: &SimulationConfig) -> JoinHandle<()> {
+    let s = sim_config.clone();
+    let join_handle = thread::spawn(move || {
+        wal_processor_internal(s);
+    });
+
+    join_handle
 }
