@@ -3,6 +3,7 @@ mod services;
 mod wal;
 mod simulation;
 
+use crate::services::generator;
 
 fn main() {
     let simulation_config = simulation::lib::SimulationConfig::get_simulation_config();
@@ -12,4 +13,7 @@ fn main() {
 
     println!("{:?}", ready_files);
     println!("{:?}", done_files);
+
+    let handle = generator::service_startup(&simulation_config);
+    handle.join().unwrap();
 }

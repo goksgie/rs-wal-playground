@@ -8,7 +8,7 @@ use crate::utilities;
 pub enum WalAction {
     /// Signifies the number of times that uploading this file will fail.
     /// When it is 0, it is expected to be succeeded.
-    Fail { count: u16 },
+    Fail { count: u8 },
 
     /// Upload is successful.
     Success,
@@ -76,7 +76,7 @@ impl WalFile {
         WalFile {
             action: action,
             duration: work_duration,
-            file_name: OsString::from(format!("{}/00000001{:0>16}", utilities::STATUS_DIR, hex_name))
+            file_name: OsString::from(format!("{}/00000001{:0>16}.ready", utilities::STATUS_DIR, hex_name))
         }
     }
 
@@ -123,12 +123,12 @@ mod tests {
     #[test]
     fn wal_file_number() {
         let w = WalFile::generate_wal_file(1, WalAction::Success, 10);
-        let expected_w = format!("{}/000000010000000000000001", utilities::STATUS_DIR);
+        let expected_w = format!("{}/000000010000000000000001.ready", utilities::STATUS_DIR);
 
         assert_eq!(Some(expected_w.as_str()), w.file_name.to_str());
 
         let w = WalFile::generate_wal_file(255, WalAction::Success, 10);
-        let expected_w = format!("{}/0000000100000000000000FF", utilities::STATUS_DIR);
+        let expected_w = format!("{}/0000000100000000000000FF.ready", utilities::STATUS_DIR);
 
         assert_eq!(Some(expected_w.as_str()), w.file_name.to_str());
     }

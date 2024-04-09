@@ -8,29 +8,41 @@ use crate::utilities;
 
 /// Represents the simulation configurations that will
 /// be read from the simulation_conf.json file.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SimulationConfig {
     /// A fixed seed that will be fed to the randomizer to obtain the same randomization always.
     seed: u64,
     
+    /// Specifies how often the WAL generator create WAL files which will cause
+    /// failures.
+    pub(crate) wal_failure_ratio: f64,
+
+    /// The minimum number attempts that will result with failure.
+    /// Only applies to WalAction::Fail
+    pub(crate) wal_failure_attempt_min: u8,
+
+    /// The max number attempts that will result with failure.
+    /// Only applies to WalAction::Fail
+    pub(crate) wal_failure_attempt_max: u8,
+
     /// Specifies the amount of delay to be put between WAL file generation.
     /// Unit is nanoseconds. 
-    wal_generation_delay: u64,
+    pub(crate) wal_generation_delay: u64,
     
     /// Specifies the amount of delay to be put between WAL file processing.
     /// Unit is nanoseconds.
-    wal_processing_delay: u64,
+    pub(crate) wal_processing_delay: u64,
     
     /// Specifies the minimum amount of time that will be spend on processing a particular
     /// WAL file. The unit is nanoseconds.
-    wal_process_duration_min: u64,
+    pub(crate) wal_process_duration_min: u64,
     
     /// Specifies the maximum amount of time that will be spend on processing a particular
     /// WAL file. The unit is nanoseconds.
-    wal_process_duration_max: u64,
+    pub(crate)  wal_process_duration_max: u64,
 
     #[serde(skip_serializing, skip_deserializing)]
-    rng: Option<ChaCha8Rng>,
+    pub(crate) rng: Option<ChaCha8Rng>,
 }
 
 impl SimulationConfig {
