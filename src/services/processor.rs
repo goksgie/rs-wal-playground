@@ -7,8 +7,6 @@ use std::thread;
 
 use crate::utilities;
 
-
-
 /// This metadata is maintained by the main proccessor, and not thread safe.
 struct Metadata {
     /// the first file that processing error has occured,
@@ -39,8 +37,6 @@ impl Metadata {
         }
     }
 }
-
-
 
 pub fn service_startup(run_interval_sec: usize) {
 }

@@ -1,6 +1,7 @@
 {
     "seed": 12345,
-    "freq_generation": 1,
+    "wal_generation_delay": 1,
+    "wal_processing_delay": 1,
     "wal_process_duration_min": 0,
     "wal_process_duration_max": 1000
 }

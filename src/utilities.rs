@@ -1,8 +1,8 @@
 use std::fs;
 use std::ffi;
 
-pub(crate) const SOURCE_DIR: &'static str = "file-source";
-pub(crate) const STATUS_DIR: &'static str = "file-source/file-status";
+pub(crate) const SOURCE_DIR: &'static str = "../file-source";
+pub(crate) const STATUS_DIR: &'static str = "../file-source/file-status";
 pub(crate) const SIMULATION_DIR: &'static str = "simulation";
 
 pub fn get_ready_files() -> Result<Vec<ffi::OsString>, std::io::Error> {
