@@ -1,14 +1,21 @@
 use std::fs;
 use std::ffi;
-use std::str::FromStr;
 
 pub(crate) const SOURCE_DIR: &'static str = "file-source";
 pub(crate) const STATUS_DIR: &'static str = "file-source/file-status";
 pub(crate) const SIMULATION_DIR: &'static str = "src/simulation";
 
+/// TODO: Construct this file entry to ease the implementation in the consumer.rs
+pub struct FileEntry {
+    file_name: String,
+
+    file_extension: String,
+
+    full_path: String,
+}
+
 pub fn get_ready_files() -> Result<Vec<ffi::OsString>, std::io::Error> {
     let files = walk_directory(STATUS_DIR, &|x: &str| x.ends_with(".ready"))?;
-
 
     Ok(files)
 }

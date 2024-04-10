@@ -29,6 +29,10 @@ pub struct SimulationConfig {
     /// Unit is nanoseconds. 
     pub(crate) wal_generation_delay: u64,
     
+    /// Specifies the amount of delay the WAL consumer will apply before marking
+    /// WAL files as done.
+    pub(crate) wal_consumer_delay: u64,
+
     /// Specifies the amount of delay to be put between WAL file processing.
     /// Unit is nanoseconds.
     pub(crate) wal_processing_delay: u64,

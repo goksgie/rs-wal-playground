@@ -99,7 +99,17 @@ impl WalFile {
        f.write_all(buffer.as_bytes())
     }
 
+    /// Renames the .ready WAL file as .done
     pub fn mark_done(&self) -> io::Result<()> {
+        let file_name = self.file_name.to_str().unwrap();
+        let file_name = file_name.split('.').take(1).collect::<String>();
+        let done_file_name = format!("{}.done", file_name);
+        
+        std::fs::rename(&self.file_name, &done_file_name)
+    }
+
+    /// Generates a new .done WAL file under file-source folder.
+    pub fn generate_done_file(&self) -> io::Result<()> {
         let file_name = self.file_name.to_str().unwrap();
         let file_name = file_name.split('.').take(1).collect::<String>();
         let file_name = file_name.split('/').last().unwrap();

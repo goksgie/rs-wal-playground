@@ -3,7 +3,7 @@ mod services;
 mod wal;
 mod simulation;
 
-use crate::services::{generator, processor};
+use crate::services::{consumer, generator, processor};
 
 fn main() {
     let simulation_config = simulation::lib::SimulationConfig::get_simulation_config();
@@ -19,4 +19,7 @@ fn main() {
 
     let proc_handle = processor::service_startup(&simulation_config);
     proc_handle.join().unwrap();
+
+    let consumer_handle = consumer::service_startup(&simulation_config);
+    consumer_handle.join().unwrap();
 }

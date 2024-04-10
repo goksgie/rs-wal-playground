@@ -1,5 +1,3 @@
-#![feature(negative_impls)]
-
 use std::ffi;
 use std::collections::HashMap;
 use std::iter::Filter;
@@ -61,7 +59,7 @@ pub fn wal_processor_internal(sim_config: SimulationConfig) {
             match w.action {
                 WalAction::Success => {
                     processed_wals.insert(w.file_name.clone());
-                    w.mark_done().expect("Failed to mark the file as done.");
+                    w.generate_done_file().expect("Failed to mark the file as done.");
                 },
                 WalAction::Fail { count } => {
                     w.decrement_failure_count().expect("Failed to decrement the failure count");
