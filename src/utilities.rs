@@ -1,5 +1,4 @@
 use std::fs;
-use std::ffi;
 use std::fs::DirEntry;
 
 pub(crate) const SOURCE_DIR: &'static str = "file-source";

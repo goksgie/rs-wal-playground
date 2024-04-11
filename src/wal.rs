@@ -1,4 +1,4 @@
-use std::{ffi::OsString, fs::OpenOptions, io::{self, Read, Write}};
+use std::{fs::OpenOptions, io::{self, Read, Write}};
 use serde_json;
 use serde::{Serialize, Deserialize};
 
@@ -34,7 +34,6 @@ impl WalFile {
     pub fn read(f_name: &str) -> Self {
         // need to make this work with bytes...
         let mut file_contents = String::new();
-        let mut buffer = vec![0; 1024];
 
         let mut f = std::fs::OpenOptions::new()
             .read(true)
@@ -43,6 +42,7 @@ impl WalFile {
         let read_bytes = f.read_to_string(&mut file_contents).expect("Reading from file did not end up as expected");
         println!("File size was: {}", read_bytes); 
 
+        // let mut buffer = vec![0; 1024];
         // let (zeros, content) = buffer.split_at(1024-read_bytes);
         // println!("content: {:?}", content);
 

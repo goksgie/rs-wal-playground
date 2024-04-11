@@ -1,6 +1,5 @@
 use std::ffi;
 use std::collections::HashMap;
-use std::iter::Filter;
 use std::marker::PhantomData;
 use std::thread::{self, JoinHandle};
 
@@ -61,7 +60,7 @@ pub fn wal_processor_internal(sim_config: SimulationConfig) {
                     processed_wals.insert(w.file_name.clone());
                     w.generate_done_file().expect("Failed to mark the file as done.");
                 },
-                WalAction::Fail { count } => {
+                WalAction::Fail { count: _ } => {
                     w.decrement_failure_count().expect("Failed to decrement the failure count");
                     w.flush_to_file().expect("failed to flush after decrementing the failure count");
                 }
