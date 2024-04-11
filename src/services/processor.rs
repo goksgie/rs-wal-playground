@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use std::thread::{self, JoinHandle};
 
 use crate::simulation::lib::SimulationConfig;
-use crate::utilities;
+use crate::utilities::{self, FileEntry};
 use crate::wal::{WalAction, WalFile};
 
 /// This metadata is maintained by the main proccessor, and not thread safe.
@@ -46,15 +46,15 @@ pub fn wal_processor_internal(sim_config: SimulationConfig) {
         let ready_files = utilities::get_ready_files()
             .expect("The API to list ready files did not terminate correctly")
             .into_iter()
-            .filter(|w| { !processed_wals.contains(w) })
-            .collect::<Vec<ffi::OsString>>();
+            .filter(|w| { !processed_wals.contains(&w.full_path) })
+            .collect::<Vec<FileEntry>>();
         if ready_files.len() == 0 {
             println!("Cleared the WAL files with num iterations: [{}]", iteration_count);
             break;
         }
 
         for ready_file in ready_files {
-            let mut w = WalFile::read(ready_file);
+            let mut w = WalFile::read(&ready_file.full_path);
             thread::sleep(std::time::Duration::from_nanos(w.duration));
             match w.action {
                 WalAction::Success => {

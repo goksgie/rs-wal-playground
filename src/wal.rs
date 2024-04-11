@@ -26,19 +26,19 @@ pub struct WalFile {
 
     /// The file name to be stored to take action on it.
     #[serde(skip_serializing, skip_deserializing)]
-    pub(crate) file_name: OsString,
+    pub(crate) file_name: String,
 }
 
 impl WalFile {
     /// Reads the provided WAL file and constructs the WAL file format.
-    pub fn read(f_name: OsString) -> Self {
+    pub fn read(f_name: &str) -> Self {
         // need to make this work with bytes...
         let mut file_contents = String::new();
         let mut buffer = vec![0; 1024];
 
         let mut f = std::fs::OpenOptions::new()
             .read(true)
-            .open(&f_name)
+            .open(f_name)
             .expect("File does not exist");
         let read_bytes = f.read_to_string(&mut file_contents).expect("Reading from file did not end up as expected");
         println!("File size was: {}", read_bytes); 
@@ -48,7 +48,7 @@ impl WalFile {
 
         // file_contents = String::from_utf8(buffer).expect("Failed to convert the read bytes into string");
         let mut wal_file: WalFile = serde_json::from_str(&file_contents).expect("The WAL has incorrect formatting");
-        wal_file.file_name = f_name;
+        wal_file.file_name = f_name.to_string();
         wal_file
     }
 
@@ -79,7 +79,7 @@ impl WalFile {
         WalFile {
             action: action,
             duration: work_duration,
-            file_name: OsString::from(format!("{}/00000001{:0>16}.ready", utilities::STATUS_DIR, hex_name))
+            file_name: format!("{}/00000001{:0>16}.ready", utilities::STATUS_DIR, hex_name)
         }
     }
 
@@ -101,7 +101,7 @@ impl WalFile {
 
     /// Renames the .ready WAL file as .done
     pub fn mark_done(&self) -> io::Result<()> {
-        let file_name = self.file_name.to_str().unwrap();
+        let file_name = &self.file_name;
         let file_name = file_name.split('.').take(1).collect::<String>();
         let done_file_name = format!("{}.done", file_name);
         
@@ -110,7 +110,7 @@ impl WalFile {
 
     /// Generates a new .done WAL file under file-source folder.
     pub fn generate_done_file(&self) -> io::Result<()> {
-        let file_name = self.file_name.to_str().unwrap();
+        let file_name = &self.file_name;
         let file_name = file_name.split('.').take(1).collect::<String>();
         let file_name = file_name.split('/').last().unwrap();
         let done_file_name = format!("{}/{}.done", utilities::SOURCE_DIR, file_name);
@@ -129,21 +129,21 @@ mod tests {
 
     #[test]
     fn serialization_ignore_file_name() {
-        let x = WalFile { action: WalAction::Success, duration: 10, file_name: OsString::from("test") };
+        let x = WalFile { action: WalAction::Success, duration: 10, file_name: "test".to_string() };
         let y: WalFile = serde_json::from_str(&serde_json::to_string(&x).unwrap()).unwrap();
         assert!(y.file_name.is_empty());
 
-        let x = WalFile { action: WalAction::Fail { count: 100 }, duration: 10, file_name: OsString::from("test") };
+        let x = WalFile { action: WalAction::Fail { count: 100 }, duration: 10, file_name: "test".to_string() };
         let y: WalFile = serde_json::from_str(&serde_json::to_string(&x).unwrap()).unwrap();
         assert!(y.file_name.is_empty());
     }
 
     #[test]
     fn serialization_format() {
-        let x = WalFile { action: WalAction::Success, duration: 10, file_name: OsString::from("test") };
+        let x = WalFile { action: WalAction::Success, duration: 10, file_name: "test".to_string() };
         assert_eq!("{\"action\":\"Success\",\"duration\":10}", serde_json::to_string(&x).unwrap());
         
-        let x = WalFile { action: WalAction::Fail { count: 10 }, duration: 100, file_name: OsString::from("test") };
+        let x = WalFile { action: WalAction::Fail { count: 10 }, duration: 100, file_name: "test".to_string() };
         assert_eq!("{\"action\":{\"Fail\":{\"count\":10}},\"duration\":100}", serde_json::to_string(&x).unwrap());
     }
 
@@ -152,11 +152,11 @@ mod tests {
         let w = WalFile::generate_wal_file(1, WalAction::Success, 10);
         let expected_w = format!("{}/000000010000000000000001.ready", utilities::STATUS_DIR);
 
-        assert_eq!(Some(expected_w.as_str()), w.file_name.to_str());
+        assert_eq!(expected_w, w.file_name);
 
         let w = WalFile::generate_wal_file(255, WalAction::Success, 10);
         let expected_w = format!("{}/0000000100000000000000FF.ready", utilities::STATUS_DIR);
 
-        assert_eq!(Some(expected_w.as_str()), w.file_name.to_str());
+        assert_eq!(expected_w, w.file_name);
     }
 }
