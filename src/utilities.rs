@@ -138,7 +138,9 @@ impl<T: Send + 'static> ThreadPool<T> {
         collected_results
     }
 
+    /// TODO: Need to make a graceful shutdown implemented.
+    /// ALso, need cancellation tokens.
     pub fn shutdown(&self) {
-
+        
     }
 }
