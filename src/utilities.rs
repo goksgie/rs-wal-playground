@@ -1,11 +1,14 @@
-use std::fs;
+use std::{fs, io};
 use std::fs::DirEntry;
+use std::thread::{self, JoinHandle};
+use std::sync::mpsc::{self, Sender, Receiver};
+use std::sync::{Arc, Mutex};
 
 pub(crate) const SOURCE_DIR: &'static str = "file-source";
 pub(crate) const STATUS_DIR: &'static str = "file-source/file-status";
 pub(crate) const SIMULATION_DIR: &'static str = "src/simulation";
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileEntry {
     /// file's name without the extension string.
     pub file_name: String,
@@ -59,4 +62,83 @@ pub fn walk_directory(path: &str, fn_filter: impl Fn(&str) -> bool) -> Result<Ve
     }
 
     Ok(files)
+}
+
+type Job<T> = Box<dyn FnOnce() -> T + Send + 'static>;
+
+struct Worker {
+    id: u8,
+    thread: JoinHandle<()>,
+}
+
+impl Worker {
+    fn new<T>(id: u8,
+           sender: Sender<T>,
+           pool_receiver: Arc<Mutex<Receiver<Job<T>>>>) -> Worker
+           where T: Send + 'static {
+        let thread = thread::spawn(move || loop {
+            let job = pool_receiver.lock().unwrap().recv();
+            if job.is_err() {
+                println!("Failed to acquire a job, terminating.");
+                return;
+            }
+
+            let job = job.unwrap();
+            let res: T = job();
+            sender.send(res).expect("Failed to send a result back to the pool");
+        });
+        Worker { id, thread }
+    }
+}
+
+pub struct ThreadPool<T: Send + 'static> {
+    /// specifies the number of threads.
+    workers: Vec<Worker>,
+
+    result_receiver: Receiver<T>,
+
+    job_sender: Sender<Job<T>>,
+}
+
+impl<T: Send + 'static> ThreadPool<T> {
+    pub fn new(n: u8) -> Self {
+        let mut workers = Vec::with_capacity(n.into());
+        let (sender, receiver) = mpsc::channel();
+        let (sender_v, receiver_v) = mpsc::channel();
+
+        let receiver = Arc::new(Mutex::new(receiver));
+        for id in 0..n {
+            workers.push(Worker::new(id, sender_v.clone(), receiver.clone()));
+        }
+        ThreadPool {
+            workers,
+            result_receiver: receiver_v,
+            job_sender: sender,
+        }
+    }
+
+    pub fn execute<F>(&self, f: F)
+    where 
+        F: FnOnce() -> T + Send + 'static
+    {
+        let job = Box::new(f);
+        self.job_sender.send(job).expect("Failed to send a job");
+    }
+
+    pub fn collect_results(&self, n: usize) -> Vec<T>
+        where T: Sized
+    {
+        let mut collected_results = Vec::with_capacity(n);
+
+        while collected_results.len() < n {
+            let res = self.result_receiver.recv().expect("Failed to receive a result");
+            collected_results.push(res);
+        } 
+
+        collected_results
+    }
+
+    pub fn shutdown(&self) {
+
+    }
 }
