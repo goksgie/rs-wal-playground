@@ -3,6 +3,7 @@
     "wal_failure_ratio": 0.2,
     "wal_failure_attempt_min": 1,
     "wal_failure_attempt_max": 10,
+    "num_wals_to_generate": 10,
     "wal_generation_delay": 10000,
     "wal_consumer_delay": 10000,
     "wal_processing_delay": 10000,

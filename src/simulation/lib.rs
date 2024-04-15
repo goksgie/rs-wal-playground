@@ -25,6 +25,9 @@ pub struct SimulationConfig {
     /// Only applies to WalAction::Fail
     pub(crate) wal_failure_attempt_max: u8,
 
+    /// The number of WAL files that the generator will create.
+    pub(crate) num_wals_to_generate: u64,
+
     /// Specifies the amount of delay to be put between WAL file generation.
     /// Unit is nanoseconds. 
     pub(crate) wal_generation_delay: u64,

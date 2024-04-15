@@ -8,7 +8,7 @@ use crate::wal::{WalAction, WalFile};
 fn file_generator_internal(simulation_config: SimulationConfig) {
     let mut num_files_generated = 0;
     let mut rng = simulation_config.rng.unwrap().clone();
-    while num_files_generated < 10 {
+    while num_files_generated < simulation_config.num_wals_to_generate {
         // decide on generated action:
         let action = if rng.gen_bool(simulation_config.wal_failure_ratio) {
             WalAction::Fail { count: rng.gen_range(simulation_config.wal_failure_attempt_min..simulation_config.wal_failure_attempt_max) }
