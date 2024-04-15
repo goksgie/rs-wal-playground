@@ -47,15 +47,33 @@ impl Metadata {
     }
 }
 
-pub fn wal_processor_internal(sim_config: SimulationConfig) {
+/// Traverses the directory where WAL processor generates
+/// marker files, which means, these files are already processed
+/// successfully.
+fn generate_processed_wal_files() -> HashSet<String> {
+    let mut processed_wals:  HashSet<String> = std::collections::HashSet::new();
+
+    utilities::walk_directory(utilities::SOURCE_DIR, |status_file| {
+        status_file.ends_with(".done")
+    })
+        .expect("Failed to acquire status files")
+        .iter()
+        .for_each(|status_file| {
+            processed_wals.insert(status_file.file_name.clone());
+        });
+
+    processed_wals
+}
+
+fn wal_processor_internal(sim_config: SimulationConfig) {
     let mut iteration_count = 0;
-    let mut processed_wals: HashSet<String> = std::collections::HashSet::new();
+    let mut processed_wals = generate_processed_wal_files();
     let thread_pool: utilities::ThreadPool<WalResult> = utilities::ThreadPool::new(5);
     loop {
         let ready_files = utilities::get_ready_files()
             .expect("The API to list ready files did not terminate correctly")
             .into_iter()
-            .filter(|w| { !processed_wals.contains(&w.full_path) })
+            .filter(|w| { !processed_wals.contains(&w.file_name) })
             .collect::<Vec<FileEntry>>();
         if ready_files.len() == 0 {
             println!("Cleared the WAL files with num iterations: [{}]", iteration_count);
@@ -63,6 +81,7 @@ pub fn wal_processor_internal(sim_config: SimulationConfig) {
         }
 
         for ready_file  in ready_files.iter() {
+            let file_name = ready_file.file_name.clone();
             let ready_file = ready_file.clone();
             thread_pool.execute(move || {
                 let mut w = WalFile::read(&ready_file.full_path);
@@ -70,7 +89,7 @@ pub fn wal_processor_internal(sim_config: SimulationConfig) {
                 match w.action {
                     WalAction::Success => {
                         w.generate_done_file().expect("Failed to mark the file as done.");
-                        return WalResult::Success(w.file_name)
+                        return WalResult::Success(file_name)
                     },
                     WalAction::Fail { count: _ } => {
                         w.decrement_failure_count().expect("Failed to decrement the failure count");
