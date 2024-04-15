@@ -1,5 +1,6 @@
 use std::time::Duration;
 use std::thread::{self, JoinHandle};
+use std::fs;
 
 use crate::simulation::lib::SimulationConfig;
 use crate::utilities;
@@ -43,6 +44,10 @@ fn wal_consumer_internal(simulation_config: SimulationConfig) {
 
                 _ => {
                     wal_file.mark_done().expect("Failed to mark the WAL file as done.");
+                    
+                    // remove the corresponding marker file from the source directory.
+                    fs::remove_file(format!("{}/{}.done", utilities::SOURCE_DIR, wal_file_path.file_name))
+                        .expect("Failed to remove a status file");
                 }
             }
         }
