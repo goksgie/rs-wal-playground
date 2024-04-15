@@ -50,7 +50,7 @@ impl Metadata {
 pub fn wal_processor_internal(sim_config: SimulationConfig) {
     let mut iteration_count = 0;
     let mut processed_wals: HashSet<String> = std::collections::HashSet::new();
-    let thread_pool: utilities::ThreadPool<WalResult> = utilities::ThreadPool::new(2);
+    let thread_pool: utilities::ThreadPool<WalResult> = utilities::ThreadPool::new(5);
     loop {
         let ready_files = utilities::get_ready_files()
             .expect("The API to list ready files did not terminate correctly")
@@ -66,7 +66,7 @@ pub fn wal_processor_internal(sim_config: SimulationConfig) {
             let ready_file = ready_file.clone();
             thread_pool.execute(move || {
                 let mut w = WalFile::read(&ready_file.full_path);
-                thread::sleep(std::time::Duration::from_nanos(w.duration));
+                thread::sleep(std::time::Duration::from_millis(w.duration));
                 match w.action {
                     WalAction::Success => {
                         w.generate_done_file().expect("Failed to mark the file as done.");
